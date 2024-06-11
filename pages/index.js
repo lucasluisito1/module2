@@ -76,11 +76,17 @@ export default function HomePage() {
         if (action === "deposit") {
           tx = await atm.deposit(ethers.utils.parseEther(transactionAmount));
         } else if (action === "depositWithMessage") {
-          tx = await atm.depositWithMessage(ethers.utils.parseEther(transactionAmount), transactionMessage);
+          tx = await atm.depositWithMessage(
+            ethers.utils.parseEther(transactionAmount),
+            transactionMessage
+          );
         } else if (action === "withdraw") {
           tx = await atm.withdraw(ethers.utils.parseEther(transactionAmount));
         } else if (action === "withdrawToAddress") {
-          tx = await atm.withdrawToAddress(ethers.utils.parseEther(transactionAmount), withdrawAddress);
+          tx = await atm.withdrawToAddress(
+            ethers.utils.parseEther(transactionAmount),
+            withdrawAddress
+          );
         }
         await tx.wait();
         setTransactionAmount("");
@@ -244,19 +250,25 @@ export default function HomePage() {
       <style jsx>{`
         .container {
           text-align: center;
-          background-color: black;
+          background-color: #1e1e1e;
           color: white;
           padding: 20px;
           min-height: 100vh;
         }
         h1 {
           margin-bottom: 20px;
+          color: #ff66b2;
         }
         .input-field {
           border-radius: 10px;
           padding: 10px;
           font-size: 16px;
           margin: 10px 0;
+          width: 80%;
+          max-width: 300px;
+          border: 2px solid #ff66b2;
+          background-color: #333;
+          color: white;
         }
         .button-group {
           display: flex;
@@ -265,7 +277,7 @@ export default function HomePage() {
           flex-wrap: wrap;
         }
         .action-button {
-          background: pink;
+          background: #ff66b2;
           color: black;
           border-radius: 10px;
           height: 40px;
@@ -276,7 +288,7 @@ export default function HomePage() {
           transition: background 0.3s, transform 0.3s;
         }
         .action-button:hover {
-          background: #ff66b2;
+          background: #ff33a6;
           transform: scale(1.05);
         }
         .action-button:active {
