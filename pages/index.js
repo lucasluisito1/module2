@@ -8,6 +8,8 @@ export default function HomePage() {
   const [atm, setATM] = useState(undefined);
   const [balance, setBalance] = useState(undefined);
   const [transactionAmount, setTransactionAmount] = useState("");
+  const [transactionMessage, setTransactionMessage] = useState("");
+  const [withdrawAddress, setWithdrawAddress] = useState("");
   const [etherPrice, setEtherPrice] = useState(undefined);
   const [loading, setLoading] = useState(false);
   const [balanceInPHP, setBalanceInPHP] = useState(null);
@@ -41,12 +43,8 @@ export default function HomePage() {
       return;
     }
 
-    const accounts = await ethWallet.request({
-      method: "eth_requestAccounts",
-    });
+    const accounts = await ethWallet.request({ method: "eth_requestAccounts" });
     handleAccount(accounts[0]);
-
-    // once wallet is set we can get a reference to our deployed contract
     getATMContract();
   };
 
@@ -62,8 +60,7 @@ export default function HomePage() {
     if (atm) {
       const balanceWei = await atm.getBalance();
       const balanceEther = ethers.utils.formatEther(balanceWei);
-      const roundedBalance = Math.round(parseFloat(balanceEther));
-      setBalance(roundedBalance);
+      setBalance(parseFloat(balanceEther));
     }
   };
 
@@ -78,14 +75,37 @@ export default function HomePage() {
         let tx;
         if (action === "deposit") {
           tx = await atm.deposit(ethers.utils.parseEther(transactionAmount));
+        } else if (action === "depositWithMessage") {
+          tx = await atm.depositWithMessage(ethers.utils.parseEther(transactionAmount), transactionMessage);
         } else if (action === "withdraw") {
           tx = await atm.withdraw(ethers.utils.parseEther(transactionAmount));
+        } else if (action === "withdrawToAddress") {
+          tx = await atm.withdrawToAddress(ethers.utils.parseEther(transactionAmount), withdrawAddress);
         }
         await tx.wait();
         setTransactionAmount("");
+        setTransactionMessage("");
+        setWithdrawAddress("");
         getBalance();
       } catch (error) {
         console.error("Transaction failed:", error);
+      }
+    }
+  };
+
+  const handleOwnershipTransfer = async () => {
+    if (!withdrawAddress) {
+      alert("Please enter a new owner's address.");
+      return;
+    }
+
+    if (atm) {
+      try {
+        const tx = await atm.transferOwnership(withdrawAddress);
+        await tx.wait();
+        setWithdrawAddress("");
+      } catch (error) {
+        console.error("Ownership transfer failed:", error);
       }
     }
   };
@@ -107,42 +127,23 @@ export default function HomePage() {
   };
 
   const convertBalanceToPHP = () => {
-    const balanceInPHP = balance * etherPrice;
-    setBalanceInPHP(balanceInPHP);
+    if (balance && etherPrice) {
+      setBalanceInPHP(balance * etherPrice);
+    }
   };
 
   const initUser = () => {
-    // Check to see if user has Metamask
     if (!ethWallet) {
-      return <p>Please install Metamask in order to use this ATM.</p>;
+      return <p>Please install MetaMask in order to use this ATM.</p>;
     }
 
-    // Check to see if user is connected. If not, connect to their account
     if (!account) {
       return (
         <button
           onClick={connectAccount}
-          style={{
-            background: "pink",
-            color: "black",
-            borderRadius: "10px",
-            height: "40px",
-            border: "2px solid white",
-            cursor: "pointer",
-            padding: "0 20px",
-            fontSize: "16px",
-            transition: "background 0.3s, transform 0.3s",
-          }}
-          onMouseOver={(e) => {
-            e.currentTarget.style.background = "#ff66b2";
-            e.currentTarget.style.transform = "scale(1.05)";
-          }}
-          onMouseOut={(e) => {
-            e.currentTarget.style.background = "pink";
-            e.currentTarget.style.transform = "scale(1)";
-          }}
+          className="action-button"
         >
-          Connect your Metamask wallet
+          Connect your MetaMask wallet
         </button>
       );
     }
@@ -160,124 +161,71 @@ export default function HomePage() {
           value={transactionAmount}
           onChange={(e) => setTransactionAmount(e.target.value)}
           placeholder="Enter amount in ETH"
-          style={{
-            borderRadius: "10px",
-            padding: "10px",
-            fontSize: "16px",
-            margin: "10px 0",
-          }}
+          className="input-field"
         />
-        <span>&nbsp;</span>
-        <span>&nbsp;</span>
-        <span>&nbsp;</span>
-        <span>&nbsp;</span>
-        <button
-          onClick={() => handleTransaction("deposit")}
-          style={{
-            background: "pink",
-            color: "black",
-            borderRadius: "10px",
-            height: "40px",
-            border: "2px solid white",
-            cursor: "pointer",
-            padding: "0 20px",
-            fontSize: "16px",
-            transition: "background 0.3s, transform 0.3s",
-          }}
-          onMouseOver={(e) => {
-            e.currentTarget.style.background = "#ff66b2";
-            e.currentTarget.style.transform = "scale(1.05)";
-          }}
-          onMouseOut={(e) => {
-            e.currentTarget.style.background = "pink";
-            e.currentTarget.style.transform = "scale(1)";
-          }}
-        >
-          Deposit
-        </button>
-        <span>&nbsp;</span>
-        <span>&nbsp;</span>
-        <span>&nbsp;</span>
-        <button
-          onClick={() => handleTransaction("withdraw")}
-          style={{
-            background: "pink",
-            color: "black",
-            borderRadius: "10px",
-            height: "40px",
-            border: "2px solid white",
-            cursor: "pointer",
-            padding: "0 20px",
-            fontSize: "16px",
-            transition: "background 0.3s, transform 0.3s",
-          }}
-          onMouseOver={(e) => {
-            e.currentTarget.style.background = "#ff66b2";
-            e.currentTarget.style.transform = "scale(1.05)";
-          }}
-          onMouseOut={(e) => {
-            e.currentTarget.style.background = "pink";
-            e.currentTarget.style.transform = "scale(1)";
-          }}
-        >
-          Withdraw
-        </button>
         <br />
+        <input
+          type="text"
+          value={transactionMessage}
+          onChange={(e) => setTransactionMessage(e.target.value)}
+          placeholder="Enter message (optional)"
+          className="input-field"
+        />
         <br />
-        <button
-          onClick={fetchEtherPrice}
-          disabled={loading}
-          style={{
-            background: "pink",
-            color: "black",
-            borderRadius: "10px",
-            height: "40px",
-            border: "2px solid white",
-            cursor: "pointer",
-            padding: "0 20px",
-            fontSize: "16px",
-            transition: "background 0.3s, transform 0.3s",
-          }}
-          onMouseOver={(e) => {
-            e.currentTarget.style.background = "#ff66b2";
-            e.currentTarget.style.transform = "scale(1.05)";
-          }}
-          onMouseOut={(e) => {
-            e.currentTarget.style.background = "pink";
-            e.currentTarget.style.transform = "scale(1)";
-          }}
-        >
-          {loading ? "Loading..." : "Get Current Ether Price"}
-        </button>
-        <span>&nbsp;</span>
-        <span>&nbsp;</span>
-        <button
-          onClick={convertBalanceToPHP}
-          style={{
-            background: "pink",
-            color: "black",
-            borderRadius: "10px",
-            height: "40px",
-            border: "2px solid white",
-            cursor: "pointer",
-            padding: "0 20px",
-            fontSize: "16px",
-            transition: "background 0.3s, transform 0.3s",
-          }}
-          onMouseOver={(e) => {
-            e.currentTarget.style.background = "#ff66b2";
-            e.currentTarget.style.transform = "scale(1.05)";
-          }}
-          onMouseOut={(e) => {
-            e.currentTarget.style.background = "pink";
-            e.currentTarget.style.transform = "scale(1)";
-          }}
-        >
-          Balance in PHP
-        </button>
-
+        <input
+          type="text"
+          value={withdrawAddress}
+          onChange={(e) => setWithdrawAddress(e.target.value)}
+          placeholder="Enter address (for withdraw/transfer)"
+          className="input-field"
+        />
+        <br />
+        <div className="button-group">
+          <button
+            onClick={() => handleTransaction("deposit")}
+            className="action-button"
+          >
+            Deposit
+          </button>
+          <button
+            onClick={() => handleTransaction("depositWithMessage")}
+            className="action-button"
+          >
+            Deposit with Message
+          </button>
+          <button
+            onClick={() => handleTransaction("withdraw")}
+            className="action-button"
+          >
+            Withdraw
+          </button>
+          <button
+            onClick={() => handleTransaction("withdrawToAddress")}
+            className="action-button"
+          >
+            Withdraw to Address
+          </button>
+          <button
+            onClick={handleOwnershipTransfer}
+            className="action-button"
+          >
+            Transfer Ownership
+          </button>
+          <button
+            onClick={fetchEtherPrice}
+            disabled={loading}
+            className="action-button"
+          >
+            {loading ? "Loading..." : "Get Current Ether Price"}
+          </button>
+          <button
+            onClick={convertBalanceToPHP}
+            className="action-button"
+          >
+            Balance in PHP
+          </button>
+        </div>
         {etherPrice && <p>Current Ether Price: ₱{etherPrice}</p>}
-
         {balanceInPHP && <p>Balance in PHP: ₱{balanceInPHP}</p>}
       </div>
     );
@@ -303,6 +251,36 @@ export default function HomePage() {
         }
         h1 {
           margin-bottom: 20px;
+        }
+        .input-field {
+          border-radius: 10px;
+          padding: 10px;
+          font-size: 16px;
+          margin: 10px 0;
+        }
+        .button-group {
+          display: flex;
+          justify-content: center;
+          gap: 10px;
+          flex-wrap: wrap;
+        }
+        .action-button {
+          background: pink;
+          color: black;
+          border-radius: 10px;
+          height: 40px;
+          border: 2px solid white;
+          cursor: pointer;
+          padding: 0 20px;
+          font-size: 16px;
+          transition: background 0.3s, transform 0.3s;
+        }
+        .action-button:hover {
+          background: #ff66b2;
+          transform: scale(1.05);
+        }
+        .action-button:active {
+          transform: scale(1);
         }
       `}</style>
     </main>
