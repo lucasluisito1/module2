@@ -12,7 +12,7 @@ export default function HomePage() {
   const [withdrawAddress, setWithdrawAddress] = useState("");
   const [etherPrice, setEtherPrice] = useState(undefined);
   const [loading, setLoading] = useState(false);
-  const [balanceInPHP, setBalanceInPHP] = useState(null);
+  const [balanceInUSD, setBalanceInUSD] = useState(null);
 
   const contractAddress = "0x5FbDB2315678afecb367f032d93F642f64180aa3";
   const atmABI = atm_abi.abi;
@@ -30,7 +30,7 @@ export default function HomePage() {
 
   const handleAccount = (account) => {
     if (account) {
-      console.log("Account connected: ", account);
+      console.log("Connected Account: ", account);
       setAccount(account);
     } else {
       console.log("No account found");
@@ -39,7 +39,7 @@ export default function HomePage() {
 
   const connectAccount = async () => {
     if (!ethWallet) {
-      alert("MetaMask wallet is required to connect");
+      alert("Please install MetaMask to continue.");
       return;
     }
 
@@ -120,10 +120,10 @@ export default function HomePage() {
     setLoading(true);
     try {
       const response = await fetch(
-        "https://api.coingecko.com/api/v3/simple/price?ids=ethereum&vs_currencies=php"
+        "https://api.coingecko.com/api/v3/simple/price?ids=ethereum&vs_currencies=usd"
       );
       const data = await response.json();
-      const price = data.ethereum.php;
+      const price = data.ethereum.usd;
       setEtherPrice(price);
     } catch (error) {
       console.error("Failed to fetch Ether price:", error);
@@ -132,15 +132,15 @@ export default function HomePage() {
     }
   };
 
-  const convertBalanceToPHP = () => {
+  const convertBalanceToUSD = () => {
     if (balance && etherPrice) {
-      setBalanceInPHP(balance * etherPrice);
+      setBalanceInUSD(balance * etherPrice);
     }
   };
 
-  const initUser = () => {
+  const renderUserInterface = () => {
     if (!ethWallet) {
-      return <p>Please install MetaMask in order to use this ATM.</p>;
+      return <p>Please install MetaMask to use this DApp.</p>;
     }
 
     if (!account) {
@@ -149,7 +149,7 @@ export default function HomePage() {
           onClick={connectAccount}
           className="action-button"
         >
-          Connect your MetaMask wallet
+          Connect MetaMask Wallet
         </button>
       );
     }
@@ -160,8 +160,8 @@ export default function HomePage() {
 
     return (
       <div>
-        <p>Your Account: {account}</p>
-        <p>Your Balance: {balance} ETH</p>
+        <p>Account: {account}</p>
+        <p>Balance: {balance} ETH</p>
         <input
           type="number"
           value={transactionAmount}
@@ -225,14 +225,14 @@ export default function HomePage() {
             {loading ? "Loading..." : "Get Current Ether Price"}
           </button>
           <button
-            onClick={convertBalanceToPHP}
+            onClick={convertBalanceToUSD}
             className="action-button"
           >
-            Balance in PHP
+            Balance in USD
           </button>
         </div>
-        {etherPrice && <p>Current Ether Price: ₱{etherPrice}</p>}
-        {balanceInPHP && <p>Balance in PHP: ₱{balanceInPHP}</p>}
+        {etherPrice && <p>Current Ether Price: ${etherPrice}</p>}
+        {balanceInUSD && <p>Balance in USD: ${balanceInUSD}</p>}
       </div>
     );
   };
@@ -244,30 +244,34 @@ export default function HomePage() {
   return (
     <main className="container">
       <header>
-        <h1>Welcome to Lucas' ATM!</h1>
+        <h1>Welcome to My Crypto Wallet!</h1>
       </header>
-      {initUser()}
+      {renderUserInterface()}
       <style jsx>{`
         .container {
           text-align: center;
-          background-color: #1e1e1e;
+          background-color: #292c35;
           color: white;
           padding: 20px;
           min-height: 100vh;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
         }
         h1 {
           margin-bottom: 20px;
-          color: #ff66b2;
+          color: #3ccfcf;
         }
         .input-field {
-          border-radius: 10px;
+          border-radius: 8px;
           padding: 10px;
           font-size: 16px;
           margin: 10px 0;
           width: 80%;
           max-width: 300px;
-          border: 2px solid #ff66b2;
-          background-color: #333;
+          border: 2px solid #3ccfcf;
+          background-color: #1f2128;
           color: white;
         }
         .button-group {
@@ -275,11 +279,12 @@ export default function HomePage() {
           justify-content: center;
           gap: 10px;
           flex-wrap: wrap;
+          margin-top: 20px;
         }
         .action-button {
-          background: #ff66b2;
+          background: #3ccfcf;
           color: black;
-          border-radius: 10px;
+          border-radius: 8px;
           height: 40px;
           border: 2px solid white;
           cursor: pointer;
@@ -288,7 +293,7 @@ export default function HomePage() {
           transition: background 0.3s, transform 0.3s;
         }
         .action-button:hover {
-          background: #ff33a6;
+          background: #18a5a5;
           transform: scale(1.05);
         }
         .action-button:active {
